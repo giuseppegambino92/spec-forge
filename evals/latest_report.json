@@ -1,0 +1,2001 @@
+{
+  "generated_at": "2026-11-14T05:25:05+0100",
+  "spec_forge_version": "1.0.0",
+  "environment": {
+    "python": "3.11.18",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "sandbox": "subprocess",
+    "quick": false
+  },
+  "config": {
+    "fuzz_trials": 600,
+    "fuzz_seed": 1337,
+    "mcts_iterations": 80,
+    "mcts_max_depth": 3,
+    "max_cegis_rounds": 6
+  },
+  "wall_time_s": 35.32,
+  "summary": {
+    "silent_bug_discovery": {
+      "naive_unit_tests_caught": 0,
+      "naive_unit_tests_rate_pct": 0.0,
+      "naive_tests_pass_on_reference": true,
+      "specforge_caught": 12,
+      "specforge_rate_pct": 100.0,
+      "true_positive_counterexamples": 15,
+      "total_counterexamples": 15,
+      "false_alarms_on_reference_fixes": 0,
+      "median_trials_to_first_failure": 3,
+      "median_ms_to_first_failure": 0.645
+    },
+    "shrinking": {
+      "campaign_counterexamples": {
+        "samples": 15,
+        "mean_reduction_pct": 57.04,
+        "aggregate_reduction_pct": 83.57,
+        "median_ms": 0.148,
+        "p95_ms": 1.359,
+        "max_ms": 25.548,
+        "under_50ms_pct": 100.0
+      },
+      "stress_protocol_large_inputs": {
+        "samples": 36,
+        "mean_reduction_pct": 83.69,
+        "aggregate_reduction_pct": 96.28,
+        "median_ms": 0.36,
+        "p95_ms": 3.021,
+        "max_ms": 28.39,
+        "under_50ms_pct": 100.0
+      }
+    },
+    "cegis_repair": {
+      "repaired": 12,
+      "of_discovered": 12,
+      "repair_rate_pct": 100.0,
+      "validation_trials_per_target": 1000,
+      "oracle_exact_agreement": 12,
+      "oracle_inputs_per_target": 1000,
+      "median_verifier_calls": 1,
+      "median_heal_ms": 103.37,
+      "ablation_uniform_priors": {
+        "repaired": 12,
+        "repair_rate_pct": 100.0,
+        "median_verifier_calls": 2,
+        "mean_verifier_calls": 4.92,
+        "mean_verifier_calls_with_priors": 2.0
+      }
+    },
+    "firewall": {
+      "payloads": 20,
+      "blocked": 20,
+      "block_rate_pct": 100.0,
+      "mean_audit_ms": 0.0755,
+      "max_mean_audit_ms": 0.1153,
+      "p99_audit_ms": 0.186,
+      "audits_under_2ms_pct": 100.0,
+      "max_single_audit_ms": 0.1857,
+      "benign_modules": 24,
+      "benign_allowed": 24
+    }
+  },
+  "cases": [
+    {
+      "id": "B01",
+      "module": "b01_split_payment",
+      "bug_class": "conservation leak (rounding)",
+      "domain": "financial",
+      "oracle_mode": "multiset",
+      "naive": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 56.84,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "split_payment",
+            "property": "ensures[1]",
+            "message": "ensures `sum(result) == total_cents` violated (result=[0, 0])",
+            "minimal_case": "{'parties': 2, 'total_cents': 1}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 1,
+        "ms_to_first_failure": 0.17600000137463212
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 67.56,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -11,4 +11,9 @@\n     :ensures: max(result) - min(result) <= 1\n     \"\"\"\n     share = round(total_cents / parties)\n-    return [share] * parties\n+    _sf_res = list([share] * parties)\n+    _sf_residual = (total_cents) - sum(_sf_res)\n+    _sf_step = 1 if _sf_residual > 0 else -1\n+    for _sf_i in range(abs(int(_sf_residual)) if _sf_res else 0):\n+        _sf_res[_sf_i % len(_sf_res)] += _sf_step\n+    return _sf_res\n",
+        "edits": [
+          [
+            "rebalance residual so `sum(result) == total_cents` (unit-wise distribution)"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "split_payment": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 2,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.2,
+        "discovery": 57.6,
+        "false_alarm_check": 48.0,
+        "stress_shrink": 16.0,
+        "heal": 67.6,
+        "validation": 79.5,
+        "oracle_and_ablation": 179.3
+      }
+    },
+    {
+      "id": "B02",
+      "module": "b02_sliding_window",
+      "bug_class": "off-by-one window boundary",
+      "domain": "rate limiting",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 18.51,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "admit_requests",
+            "property": "ensures[1]",
+            "message": "ensures `all(sum(1 for j in range(len(timestamps)) if result[j] and timestamps[i] - window <= timestamps[j] <= timestamps[i]) <= limit for i in range(len(timestamps)))` violated (result=[True, True])",
+            "minimal_case": "{'limit': 1, 'timestamps': [0, 4], 'window': 4}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 63,
+        "ms_to_first_failure": 6.096207973314449
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 180.18,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -19,7 +19,7 @@\n     admitted = deque()\n     decisions = []\n     for t in timestamps:\n-        while admitted and t - admitted[0] >= window:\n+        while admitted and t - admitted[0] > window:\n             admitted.popleft()\n         if len(admitted) < limit:\n             admitted.append(t)\n",
+        "edits": [
+          [
+            "L22: `>=` -> `>` in `t - admitted[0] >= window`"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "admit_requests": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 2,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.3,
+        "discovery": 19.1,
+        "false_alarm_check": 100.9,
+        "stress_shrink": 38.8,
+        "heal": 180.2,
+        "validation": 245.2,
+        "oracle_and_ablation": 483.7
+      }
+    },
+    {
+      "id": "B03",
+      "module": "b03_normalize_whitespace",
+      "bug_class": "non-idempotent normalisation",
+      "domain": "text/search",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 7.82,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "normalize_whitespace",
+            "property": "ensures[0]",
+            "message": "ensures `\"  \" not in result` violated (result='0  0')",
+            "minimal_case": "{'text': '0   0'}",
+            "true_positive": true
+          },
+          {
+            "target": "normalize_whitespace",
+            "property": "idempotency",
+            "message": "not idempotent: f(x)='0  0' but f(f(x))='0 0'",
+            "minimal_case": "{'text': '0   0'}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 77,
+        "ms_to_first_failure": 3.137374995276332
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 43.4,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -6,4 +6,12 @@\n \n     :ensures: \"  \" not in result\n     \"\"\"\n-    return text.replace(\"  \", \" \").strip()\n+    def _sf_step(text: str):\n+        return text.replace(\"  \", \" \").strip()\n+    _sf_cur = _sf_step(text)\n+    for _sf_iter in range(64):\n+        _sf_next = _sf_step(_sf_cur)\n+        if _sf_next == _sf_cur:\n+            break\n+        _sf_cur = _sf_next\n+    return _sf_cur\n",
+        "edits": [
+          [
+            "iterate normalize_whitespace() to a fixpoint (idempotent closure, <=64 steps)"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "normalize_whitespace": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 1,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.2,
+        "discovery": 8.5,
+        "false_alarm_check": 26.1,
+        "stress_shrink": 11.8,
+        "heal": 43.4,
+        "validation": 44.8,
+        "oracle_and_ablation": 112.2
+      }
+    },
+    {
+      "id": "B04",
+      "module": "b04_mutable_default",
+      "bug_class": "mutable default state corruption",
+      "domain": "state",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 5.27,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "register_event",
+            "property": "determinism",
+            "message": "hidden state: identical calls returned [' ', ' ', '', '', ''] then [' ', ' ', '', '', '', '']",
+            "minimal_case": "{'name': ''}",
+            "true_positive": true
+          },
+          {
+            "target": "register_event",
+            "property": "no_input_mutation",
+            "message": "argument `registry` mutated: [] -> ['']",
+            "minimal_case": "{'name': '', 'registry': []}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 1,
+        "ms_to_first_failure": 0.08458300726488233
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 72.07,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -6,5 +6,6 @@\n \n     :ensures: result[-1] == name\n     \"\"\"\n+    registry = list(registry)\n     registry.append(name)\n     return registry\n",
+        "edits": [
+          [
+            "copy mutable parameter(s) on entry: registry = list(registry)"
+          ]
+        ],
+        "verifier_calls": 2,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "register_event": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 1,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.1,
+        "discovery": 5.8,
+        "false_alarm_check": 39.2,
+        "stress_shrink": 21.5,
+        "heal": 72.1,
+        "validation": 103.0,
+        "oracle_and_ablation": 234.4
+      }
+    },
+    {
+      "id": "B05",
+      "module": "b05_zscore",
+      "bug_class": "division by zero on degenerate variance",
+      "domain": "analytics",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 12.74,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "zscores",
+            "property": "totality",
+            "message": "raised ZeroDivisionError: 'float division by zero'",
+            "minimal_case": "{'samples': [0.0]}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 5,
+        "ms_to_first_failure": 0.6447920168284327
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 215.3,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -12,4 +12,4 @@\n     \"\"\"\n     mu = statistics.fmean(samples)\n     sigma = statistics.pstdev(samples)\n-    return [(x - mu) / sigma for x in samples]\n+    return [((x - mu) / sigma if sigma != 0 else 0.0) for x in samples]\n",
+        "edits": [
+          [
+            "L15: guard divisor `sigma` in `(x - mu) / sigma`"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "zscores": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 25,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.3,
+        "discovery": 13.2,
+        "false_alarm_check": 125.2,
+        "stress_shrink": 50.2,
+        "heal": 215.3,
+        "validation": 288.1,
+        "oracle_and_ablation": 690.7
+      }
+    },
+    {
+      "id": "B06",
+      "module": "b06_quota_underflow",
+      "bug_class": "integer underflow in quota deduction",
+      "domain": "rate limiting",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 3,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 4.01,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "deduct_quota",
+            "property": "ensures[0]",
+            "message": "ensures `0 <= result <= remaining` violated (result=-1)",
+            "minimal_case": "{'cost': 1, 'remaining': 0}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 2,
+        "ms_to_first_failure": 0.14449999434873462
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 34.69,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -9,5 +9,5 @@\n     :ensures: 0 <= result <= remaining\n     \"\"\"\n     if cost == 0:\n-        return remaining\n-    return remaining - cost\n+        return min(remaining, max(0, remaining))\n+    return min(remaining, max(0, remaining - cost))\n",
+        "edits": [
+          [
+            "clamp return of deduct_quota() into [0, remaining] derived from :ensures:"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "deduct_quota": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 4,
+        "oracle_agreement_pct": 13.8
+      },
+      "phase_ms": {
+        "naive": 0.1,
+        "discovery": 4.3,
+        "false_alarm_check": 22.1,
+        "stress_shrink": 9.3,
+        "heal": 34.7,
+        "validation": 36.1,
+        "oracle_and_ablation": 94.0
+      }
+    },
+    {
+      "id": "B07",
+      "module": "b07_ledger_total",
+      "bug_class": "floating-point drift (order dependence)",
+      "domain": "financial",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 32.89,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "ledger_total",
+            "property": "permutation_invariance",
+            "message": "order-dependent result: f(xs)=67108690.900000006 but f(reversed(xs))=67108690.9",
+            "minimal_case": "{'amounts': [40.9, 81051070.0, -13942420.0]}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 17,
+        "ms_to_first_failure": 1.1344999948050827
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 123.7,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -1,4 +1,5 @@\n \"\"\"Ledger reconciliation: the same set of postings must always produce the same balance.\"\"\"\n+import math\n \n \n def ledger_total(amounts: list[float]) -> float:\n@@ -6,4 +7,4 @@\n \n     :requires: all(math.isfinite(a) and abs(a) <= 1e9 for a in amounts)\n     \"\"\"\n-    return sum(amounts)\n+    return math.fsum(amounts)\n",
+        "edits": [
+          [
+            "L9: `sum(amounts)` -> `math.fsum(amounts)` (exactly rounded)"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "ledger_total": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 2,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.1,
+        "discovery": 33.3,
+        "false_alarm_check": 59.3,
+        "stress_shrink": 72.3,
+        "heal": 123.7,
+        "validation": 131.8,
+        "oracle_and_ablation": 305.3
+      }
+    },
+    {
+      "id": "B08",
+      "module": "b08_paginate",
+      "bug_class": "off-by-one slice bound",
+      "domain": "API",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 7.9,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "paginate",
+            "property": "law[0]",
+            "message": "law `[x for p in range(len(items) // size + 1) for x in paginate(items, p, size)] == items` violated",
+            "minimal_case": "{'items': [0], 'page': 0, 'size': 1}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 1,
+        "ms_to_first_failure": 0.18908301717601717
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 103.37,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -10,5 +10,5 @@\n     :law: [x for p in range(len(items) // size + 1) for x in paginate(items, p, size)] == items\n     \"\"\"\n     start = page * size\n-    end = min(start + size, len(items) - 1)\n+    end = min(start + size, len(items) - 0)\n     return items[start:end]\n",
+        "edits": [
+          [
+            "L13: literal 1 -> 0"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "paginate": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 1,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.2,
+        "discovery": 8.4,
+        "false_alarm_check": 65.6,
+        "stress_shrink": 25.2,
+        "heal": 103.4,
+        "validation": 139.3,
+        "oracle_and_ablation": 302.3
+      }
+    },
+    {
+      "id": "B09",
+      "module": "b09_rle_codec",
+      "bug_class": "round-trip invertibility violation",
+      "domain": "serialization",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 223.1,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "rle_encode",
+            "property": "ensures[0]",
+            "message": "ensures `all(n >= 1 for _, n in result)` violated (result=[(' ', 0)])",
+            "minimal_case": "{'data': ' '}",
+            "true_positive": true
+          },
+          {
+            "target": "rle_encode",
+            "property": "roundtrip[rle_decode]",
+            "message": "round-trip broken: rle_decode([(' ', 0)]) = '' != ' '",
+            "minimal_case": "{'data': ' '}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 1,
+        "ms_to_first_failure": 0.1534579787403345
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 372.73,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -12,7 +12,7 @@\n         j = i\n         while j + 1 < len(data) and data[j + 1] == data[i]:\n             j += 1\n-        runs.append((data[i], j - i))\n+        runs.append((data[i], j - i + 1))\n         i = j + 1\n     return runs\n \n",
+        "edits": [
+          [
+            "L15: `j - i` -> `j - i + 1`"
+          ]
+        ],
+        "verifier_calls": 12,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "rle_encode": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            },
+            "rle_decode": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 2000,
+          "agree": 2000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 7,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.3,
+        "discovery": 224.0,
+        "false_alarm_check": 275.5,
+        "stress_shrink": 722.0,
+        "heal": 372.7,
+        "validation": 728.0,
+        "oracle_and_ablation": 1428.2
+      }
+    },
+    {
+      "id": "B10",
+      "module": "b10_top_k",
+      "bug_class": "input aliasing / mutation",
+      "domain": "state",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 6.72,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "top_k",
+            "property": "no_input_mutation",
+            "message": "argument `scores` mutated: [0, 1] -> [1, 0]",
+            "minimal_case": "{'k': 0, 'scores': [0, 1]}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 3,
+        "ms_to_first_failure": 0.28925001970492303
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 85.54,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -8,5 +8,6 @@\n     :ensures: len(result) == min(k, len(scores))\n     :ensures: result == sorted(result, reverse=True)\n     \"\"\"\n+    scores = list(scores)\n     scores.sort(reverse=True)\n     return scores[:k]\n",
+        "edits": [
+          [
+            "copy mutable parameter(s) on entry: scores = list(scores)"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "top_k": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 3,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.1,
+        "discovery": 7.2,
+        "false_alarm_check": 60.7,
+        "stress_shrink": 20.9,
+        "heal": 85.6,
+        "validation": 111.2,
+        "oracle_and_ablation": 257.0
+      }
+    },
+    {
+      "id": "B11",
+      "module": "b11_hit_counter",
+      "bug_class": "race condition (lost update)",
+      "domain": "concurrency",
+      "oracle_mode": "atomicity",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 185.59,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "HitCounter.increment",
+            "property": "atomicity[increment]",
+            "message": "lost update on `hits`: 2 threads x 1 calls -> 1, sequential execution -> 2",
+            "minimal_case": "{'args': {}, 'calls': 1, 'init': {}, 'threads': 2}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 1,
+        "ms_to_first_failure": 3.800875012530014
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 1440.63,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -1,15 +1,18 @@\n \"\"\"Process-wide request counter shared by the worker threads of the HTTP server.\"\"\"\n \n import time\n+import threading\n \n \n class HitCounter:\n     \"\"\"Counts hits from many worker threads concurrently.\"\"\"\n \n     def __init__(self) -> None:\n+        self._sf_lock = threading.RLock()\n         self.hits = 0\n \n     def increment(self, n: int = 1) -> None:\n-        current = self.hits\n-        time.sleep(0)  # metrics flush hook (I/O) between read and write\n-        self.hits = current + n\n+        with self._sf_lock:\n+            current = self.hits\n+            time.sleep(0)  # metrics flush hook (I/O) between read and write\n+            self.hits = current + n\n",
+        "edits": [
+          [
+            "serialise increment() of HitCounter with a per-instance RLock"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "HitCounter.increment": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 100,
+          "agree": 100,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 9,
+        "oracle_agreement_pct": 100.0
+      },
+      "phase_ms": {
+        "naive": 0.2,
+        "discovery": 186.2,
+        "false_alarm_check": 984.6,
+        "stress_shrink": 543.6,
+        "heal": 1440.6,
+        "validation": 1760.5,
+        "oracle_and_ablation": 20255.2
+      }
+    },
+    {
+      "id": "B12",
+      "module": "b12_percentile",
+      "bug_class": "index out of bounds at p = 100",
+      "domain": "analytics",
+      "oracle_mode": "equal",
+      "naive": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "naive_on_reference": {
+        "tests": 2,
+        "failed": 0,
+        "caught": false,
+        "failures": []
+      },
+      "verify_ms": 13.5,
+      "discovery": {
+        "status": "falsified",
+        "found": true,
+        "counterexamples": [
+          {
+            "target": "percentile",
+            "property": "totality",
+            "message": "raised IndexError: 'list index out of range'",
+            "minimal_case": "{'p': 100.0, 'values': [0.0]}",
+            "true_positive": true
+          }
+        ],
+        "trials_to_first_failure": 63,
+        "ms_to_first_failure": 5.074417014839128
+      },
+      "false_alarm_on_reference": false,
+      "reference_status": "verified",
+      "repair": {
+        "status": "repaired",
+        "heal_ms": 93.8,
+        "diff": "--- a/target.py\n+++ b/target.py\n@@ -11,4 +11,4 @@\n     \"\"\"\n     ordered = sorted(values)\n     rank = int(p / 100 * len(ordered))\n-    return ordered[rank]\n+    return ordered[min(max(rank, 0), len(ordered) - 1)]\n",
+        "edits": [
+          [
+            "L14: clamp index `rank` into bounds of `ordered`"
+          ]
+        ],
+        "verifier_calls": 1,
+        "cegis_rounds": 1,
+        "validation": {
+          "passed": true,
+          "trials_per_target": 1000,
+          "seed": 987654,
+          "targets": {
+            "percentile": {
+              "passed": true,
+              "trials": 1000,
+              "error": null,
+              "violations": []
+            }
+          }
+        },
+        "oracle": {
+          "inputs": 1000,
+          "agree": 1000,
+          "agreement_pct": 100.0,
+          "first_mismatch": null
+        },
+        "firewall_allows_patch": true,
+        "success": true
+      },
+      "repair_ablation_uniform_priors": {
+        "status": "repaired",
+        "success": true,
+        "verifier_calls": 2,
+        "oracle_agreement_pct": 97.4
+      },
+      "phase_ms": {
+        "naive": 0.2,
+        "discovery": 14.1,
+        "false_alarm_check": 55.7,
+        "stress_shrink": 29.9,
+        "heal": 93.8,
+        "validation": 108.2,
+        "oracle_and_ablation": 252.7
+      }
+    }
+  ],
+  "shrink_samples": {
+    "campaign": [
+      {
+        "id": "B01",
+        "property": "ensures[1]",
+        "initial": 9,
+        "final": 5,
+        "ms": 0.146,
+        "reduction": 0.4444
+      },
+      {
+        "id": "B02",
+        "property": "ensures[1]",
+        "initial": 253,
+        "final": 12,
+        "ms": 1.359,
+        "reduction": 0.9526
+      },
+      {
+        "id": "B03",
+        "property": "ensures[0]",
+        "initial": 18,
+        "final": 6,
+        "ms": 0.378,
+        "reduction": 0.6667
+      },
+      {
+        "id": "B03",
+        "property": "idempotency",
+        "initial": 41,
+        "final": 6,
+        "ms": 0.41,
+        "reduction": 0.8537
+      },
+      {
+        "id": "B04",
+        "property": "determinism",
+        "initial": 2,
+        "final": 1,
+        "ms": 0.027,
+        "reduction": 0.5
+      },
+      {
+        "id": "B04",
+        "property": "no_input_mutation",
+        "initial": 4,
+        "final": 2,
+        "ms": 0.034,
+        "reduction": 0.5
+      },
+      {
+        "id": "B05",
+        "property": "totality",
+        "initial": 6,
+        "final": 2,
+        "ms": 0.066,
+        "reduction": 0.6667
+      },
+      {
+        "id": "B06",
+        "property": "ensures[0]",
+        "initial": 37,
+        "final": 3,
+        "ms": 0.148,
+        "reduction": 0.9189
+      },
+      {
+        "id": "B07",
+        "property": "permutation_invariance",
+        "initial": 75,
+        "final": 20,
+        "ms": 25.548,
+        "reduction": 0.7333
+      },
+      {
+        "id": "B08",
+        "property": "law[0]",
+        "initial": 14,
+        "final": 5,
+        "ms": 0.09,
+        "reduction": 0.6429
+      },
+      {
+        "id": "B09",
+        "property": "ensures[0]",
+        "initial": 2,
+        "final": 2,
+        "ms": 0.036,
+        "reduction": 0.0
+      },
+      {
+        "id": "B09",
+        "property": "roundtrip[rle_decode]",
+        "initial": 2,
+        "final": 2,
+        "ms": 0.073,
+        "reduction": 0.0
+      },
+      {
+        "id": "B10",
+        "property": "no_input_mutation",
+        "initial": 13,
+        "final": 5,
+        "ms": 0.159,
+        "reduction": 0.6154
+      },
+      {
+        "id": "B11",
+        "property": "atomicity[increment]",
+        "initial": 13,
+        "final": 7,
+        "ms": 0.863,
+        "reduction": 0.4615
+      },
+      {
+        "id": "B12",
+        "property": "totality",
+        "initial": 10,
+        "final": 4,
+        "ms": 0.208,
+        "reduction": 0.6
+      }
+    ],
+    "stress": [
+      {
+        "id": "B01",
+        "seed": 0,
+        "property": "ensures[1]",
+        "initial": 32,
+        "final": 5,
+        "ms": 0.102,
+        "reduction": 0.8438,
+        "initial_case": "{'parties': 5, 'total_cents': 106450342}",
+        "minimal_case": "{'parties': 2, 'total_cents': 1}"
+      },
+      {
+        "id": "B01",
+        "seed": 1,
+        "property": "ensures[1]",
+        "initial": 35,
+        "final": 5,
+        "ms": 0.093,
+        "reduction": 0.8571,
+        "initial_case": "{'parties': 23, 'total_cents': 204845708}",
+        "minimal_case": "{'parties': 2, 'total_cents': 1}"
+      },
+      {
+        "id": "B01",
+        "seed": 2,
+        "property": "ensures[1]",
+        "initial": 36,
+        "final": 5,
+        "ms": 0.101,
+        "reduction": 0.8611,
+        "initial_case": "{'parties': 50, 'total_cents': 248050292}",
+        "minimal_case": "{'parties': 2, 'total_cents': 1}"
+      },
+      {
+        "id": "B02",
+        "seed": 0,
+        "property": "ensures[1]",
+        "initial": 92,
+        "final": 12,
+        "ms": 0.779,
+        "reduction": 0.8696,
+        "initial_case": "{'limit': 2, 'timestamps': [0, 1, 2, 3, 6, 12, 13, 26, 50, 75, 78, 80, 99, 100, 100], 'window': 6}",
+        "minimal_case": "{'limit': 1, 'timestamps': [0, 6], 'window': 6}"
+      },
+      {
+        "id": "B02",
+        "seed": 1,
+        "property": "ensures[1]",
+        "initial": 23,
+        "final": 12,
+        "ms": 0.29,
+        "reduction": 0.4783,
+        "initial_case": "{'limit': 1, 'timestamps': [66, 72], 'window': 6}",
+        "minimal_case": "{'limit': 1, 'timestamps': [0, 6], 'window': 6}"
+      },
+      {
+        "id": "B02",
+        "seed": 2,
+        "property": "ensures[1]",
+        "initial": 229,
+        "final": 8,
+        "ms": 0.721,
+        "reduction": 0.9651,
+        "initial_case": "{'limit': 4, 'timestamps': [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 12, 16, 25, 28, 42, 43, 45, 47, 49, 50, 50, 52, 55, 56, ",
+        "minimal_case": "{'limit': 1, 'timestamps': [0, 1], 'window': 1}"
+      },
+      {
+        "id": "B03",
+        "seed": 0,
+        "property": "ensures[0]",
+        "initial": 40,
+        "final": 6,
+        "ms": 0.386,
+        "reduction": 0.85,
+        "initial_case": "{'text': ' aa      a      a  aaa   a  aaaaaa a   '}",
+        "minimal_case": "{'text': '0   0'}"
+      },
+      {
+        "id": "B03",
+        "seed": 1,
+        "property": "ensures[0]",
+        "initial": 41,
+        "final": 6,
+        "ms": 0.365,
+        "reduction": 0.8537,
+        "initial_case": "{'text': 'a        a   aaa a a   a         aa  a a'}",
+        "minimal_case": "{'text': '0   0'}"
+      },
+      {
+        "id": "B03",
+        "seed": 2,
+        "property": "ensures[0]",
+        "initial": 33,
+        "final": 6,
+        "ms": 0.369,
+        "reduction": 0.8182,
+        "initial_case": "{'text': ' a a a aaa    a a a   aa  aaa aa'}",
+        "minimal_case": "{'text': '0   0'}"
+      },
+      {
+        "id": "B04",
+        "seed": 0,
+        "property": "determinism",
+        "initial": 7,
+        "final": 1,
+        "ms": 0.036,
+        "reduction": 0.8571,
+        "initial_case": "{'name': ' a aaa'}",
+        "minimal_case": "{'name': ''}"
+      },
+      {
+        "id": "B04",
+        "seed": 1,
+        "property": "no_input_mutation",
+        "initial": 764,
+        "final": 2,
+        "ms": 0.112,
+        "reduction": 0.9974,
+        "initial_case": "{'name': 'a\ud83d\ude00ab  b\\r\\naab ', 'registry': ['     ', 'a  \ud83d\ude00b b\\x00\ufb01\\u202e\\nb\u0130\\tb  a \\u202e a aa', '1z1y09y011xx09xx09x99zy',",
+        "minimal_case": "{'name': '', 'registry': []}"
+      },
+      {
+        "id": "B04",
+        "seed": 2,
+        "property": "determinism",
+        "initial": 6,
+        "final": 1,
+        "ms": 0.023,
+        "reduction": 0.8333,
+        "initial_case": "{'name': 'a aa '}",
+        "minimal_case": "{'name': ''}"
+      },
+      {
+        "id": "B05",
+        "seed": 0,
+        "property": "totality",
+        "initial": 613,
+        "final": 2,
+        "ms": 0.515,
+        "reduction": 0.9967,
+        "initial_case": "{'samples': [-237767.3935971742, -237767.3935971742, -237767.3935971742, -237767.3935971742, -237767.3935971742, -237767",
+        "minimal_case": "{'samples': [0.0]}"
+      },
+      {
+        "id": "B05",
+        "seed": 1,
+        "property": "totality",
+        "initial": 205,
+        "final": 2,
+        "ms": 0.365,
+        "reduction": 0.9902,
+        "initial_case": "{'samples': [355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355.22, 355",
+        "minimal_case": "{'samples': [0.0]}"
+      },
+      {
+        "id": "B05",
+        "seed": 2,
+        "property": "totality",
+        "initial": 13,
+        "final": 2,
+        "ms": 0.166,
+        "reduction": 0.8462,
+        "initial_case": "{'samples': [1000000.0, 1000000.0, 1000000.0, 1000000.0, 1000000.0, 1000000.0]}",
+        "minimal_case": "{'samples': [0.0]}"
+      },
+      {
+        "id": "B06",
+        "seed": 0,
+        "property": "ensures[0]",
+        "initial": 62,
+        "final": 3,
+        "ms": 0.335,
+        "reduction": 0.9516,
+        "initial_case": "{'cost': 2009648469, 'remaining': 425801368}",
+        "minimal_case": "{'cost': 1, 'remaining': 0}"
+      },
+      {
+        "id": "B06",
+        "seed": 1,
+        "property": "ensures[0]",
+        "initial": 62,
+        "final": 3,
+        "ms": 0.423,
+        "reduction": 0.9516,
+        "initial_case": "{'cost': 1255293587, 'remaining': 404116653}",
+        "minimal_case": "{'cost': 1, 'remaining': 0}"
+      },
+      {
+        "id": "B06",
+        "seed": 2,
+        "property": "ensures[0]",
+        "initial": 63,
+        "final": 3,
+        "ms": 0.369,
+        "reduction": 0.9524,
+        "initial_case": "{'cost': 4271782845, 'remaining': 360957331}",
+        "minimal_case": "{'cost': 1, 'remaining': 0}"
+      },
+      {
+        "id": "B07",
+        "seed": 0,
+        "property": "permutation_invariance",
+        "initial": 23,
+        "final": 7,
+        "ms": 3.021,
+        "reduction": 0.6957,
+        "initial_case": "{'amounts': [0.1, 382.65, 100.0, 100.0, -237.59, -534.0]}",
+        "minimal_case": "{'amounts': [0.05, 0.5, -0.5]}"
+      },
+      {
+        "id": "B07",
+        "seed": 1,
+        "property": "permutation_invariance",
+        "initial": 77,
+        "final": 17,
+        "ms": 20.605,
+        "reduction": 0.7792,
+        "initial_case": "{'amounts': [-318.55, 1000000000.0, -980898057.4528201, -1.0, 47019997.68451297, -16.17, 44.93, 330.07, -340.84, -40.57,",
+        "minimal_case": "{'amounts': [-79.7, 500000000.0, -365782193.0]}"
+      },
+      {
+        "id": "B07",
+        "seed": 2,
+        "property": "permutation_invariance",
+        "initial": 327,
+        "final": 23,
+        "ms": 28.39,
+        "reduction": 0.9297,
+        "initial_case": "{'amounts': [-187.88, -187.88, -118.0, 237.33, -603.0, 237.33, 140.07, 678350257.3227811, -603.0, -603.0, 603692675.7771",
+        "minimal_case": "{'amounts': [461359950.0, 33583610.0, 70.035]}"
+      },
+      {
+        "id": "B08",
+        "seed": 0,
+        "property": "law[0]",
+        "initial": 227,
+        "final": 5,
+        "ms": 0.204,
+        "reduction": 0.978,
+        "initial_case": "{'items': [9223372036854775807, 3298441721453, 9223372036854775806, 2051560700417, 2, 2], 'page': 2, 'size': 4}",
+        "minimal_case": "{'items': [0], 'page': 0, 'size': 1}"
+      },
+      {
+        "id": "B08",
+        "seed": 1,
+        "property": "law[0]",
+        "initial": 567,
+        "final": 5,
+        "ms": 0.162,
+        "reduction": 0.9912,
+        "initial_case": "{'items': [743466638478, -9223372036854775808, 4006547785837, -140737488355327, 4183618078651, -608336291734643356, -232",
+        "minimal_case": "{'items': [0], 'page': 0, 'size': 1}"
+      },
+      {
+        "id": "B08",
+        "seed": 2,
+        "property": "law[0]",
+        "initial": 20,
+        "final": 5,
+        "ms": 0.191,
+        "reduction": 0.75,
+        "initial_case": "{'items': [-1, -1, -1, -1, -1], 'page': 7, 'size': 10}",
+        "minimal_case": "{'items': [0], 'page': 0, 'size': 1}"
+      },
+      {
+        "id": "B09",
+        "seed": 0,
+        "property": "ensures[0]",
+        "initial": 7,
+        "final": 2,
+        "ms": 0.105,
+        "reduction": 0.7143,
+        "initial_case": "{'data': ' a aaa'}",
+        "minimal_case": "{'data': ' '}"
+      },
+      {
+        "id": "B09",
+        "seed": 1,
+        "property": "ensures[0]",
+        "initial": 15,
+        "final": 2,
+        "ms": 0.106,
+        "reduction": 0.8667,
+        "initial_case": "{'data': 'a\ud83d\ude00ab  b\\r\\naab '}",
+        "minimal_case": "{'data': ' '}"
+      },
+      {
+        "id": "B09",
+        "seed": 2,
+        "property": "ensures[0]",
+        "initial": 6,
+        "final": 2,
+        "ms": 0.09,
+        "reduction": 0.6667,
+        "initial_case": "{'data': 'a aa '}",
+        "minimal_case": "{'data': ' '}"
+      },
+      {
+        "id": "B10",
+        "seed": 0,
+        "property": "no_input_mutation",
+        "initial": 223,
+        "final": 5,
+        "ms": 0.254,
+        "reduction": 0.9776,
+        "initial_case": "{'k': 2, 'scores': [9223372036854775807, 3298441721453, 9223372036854775806, 2051560700417, 2, 2]}",
+        "minimal_case": "{'k': 0, 'scores': [0, 1]}"
+      },
+      {
+        "id": "B10",
+        "seed": 1,
+        "property": "no_input_mutation",
+        "initial": 566,
+        "final": 5,
+        "ms": 0.258,
+        "reduction": 0.9912,
+        "initial_case": "{'k': 41, 'scores': [743466638478, -9223372036854775808, 4006547785837, -140737488355327, 4183618078651, -60833629173464",
+        "minimal_case": "{'k': 0, 'scores': [0, 1]}"
+      },
+      {
+        "id": "B10",
+        "seed": 2,
+        "property": "no_input_mutation",
+        "initial": 252,
+        "final": 5,
+        "ms": 0.188,
+        "reduction": 0.9802,
+        "initial_case": "{'k': 43, 'scores': [-2191435573507356964, -2724404761485, -1529699094914, -1024, 1405475356114, 3330297246138]}",
+        "minimal_case": "{'k': 0, 'scores': [0, 1]}"
+      },
+      {
+        "id": "B11",
+        "seed": 0,
+        "property": "atomicity[increment]",
+        "initial": 13,
+        "final": 8,
+        "ms": 1.903,
+        "reduction": 0.3846,
+        "initial_case": "{'args': {}, 'calls': 49, 'init': {}, 'threads': 7}",
+        "minimal_case": "{'args': {}, 'calls': 1, 'init': {}, 'threads': 4}"
+      },
+      {
+        "id": "B11",
+        "seed": 1,
+        "property": "atomicity[increment]",
+        "initial": 12,
+        "final": 7,
+        "ms": 1.69,
+        "reduction": 0.4167,
+        "initial_case": "{'args': {}, 'calls': 28, 'init': {}, 'threads': 7}",
+        "minimal_case": "{'args': {}, 'calls': 1, 'init': {}, 'threads': 3}"
+      },
+      {
+        "id": "B11",
+        "seed": 2,
+        "property": "atomicity[increment]",
+        "initial": 10,
+        "final": 7,
+        "ms": 1.438,
+        "reduction": 0.3,
+        "initial_case": "{'args': {}, 'calls': 6, 'init': {}, 'threads': 7}",
+        "minimal_case": "{'args': {}, 'calls': 1, 'init': {}, 'threads': 3}"
+      },
+      {
+        "id": "B12",
+        "seed": 0,
+        "property": "totality",
+        "initial": 355,
+        "final": 4,
+        "ms": 0.449,
+        "reduction": 0.9887,
+        "initial_case": "{'p': 100.0, 'values': [-1000000.0, -774999.4562227132, -759668.3300874727, -494235.8298843066, -410808.7850266538, -200",
+        "minimal_case": "{'p': 100.0, 'values': [0.0]}"
+      },
+      {
+        "id": "B12",
+        "seed": 1,
+        "property": "totality",
+        "initial": 104,
+        "final": 4,
+        "ms": 0.408,
+        "reduction": 0.9615,
+        "initial_case": "{'p': 100.0, 'values': [593.0, 220.36, 469.0, 813.0, -264.0, 10.38, -819.0, -1.0, -830.0, 1e-09, -709.0, -950297.2703273",
+        "minimal_case": "{'p': 100.0, 'values': [0.0]}"
+      },
+      {
+        "id": "B12",
+        "seed": 2,
+        "property": "totality",
+        "initial": 239,
+        "final": 4,
+        "ms": 0.36,
+        "reduction": 0.9833,
+        "initial_case": "{'p': 100.0, 'values': [295.09, 582791.8859782314, 582791.8859782314, 295.09, 91.83, 295.09, 100.0, 295.09, 100.0, 1.0, ",
+        "minimal_case": "{'p': 100.0, 'values': [0.0]}"
+      }
+    ]
+  },
+  "firewall_payloads": [
+    {
+      "payload": "file_read",
+      "category": "filesystem",
+      "blocked": true,
+      "rules": [
+        "SF002-dynamic-code"
+      ],
+      "mean_ms": 0.0885,
+      "p99_ms": 0.147,
+      "max_ms": 0.147
+    },
+    {
+      "payload": "os_system",
+      "category": "process",
+      "blocked": true,
+      "rules": [
+        "SF001-import",
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.0746,
+      "p99_ms": 0.133,
+      "max_ms": 0.1332
+    },
+    {
+      "payload": "subprocess_run",
+      "category": "process",
+      "blocked": true,
+      "rules": [
+        "SF001-import"
+      ],
+      "mean_ms": 0.0993,
+      "p99_ms": 0.186,
+      "max_ms": 0.1857
+    },
+    {
+      "payload": "socket_exfil",
+      "category": "network",
+      "blocked": true,
+      "rules": [
+        "SF001-import"
+      ],
+      "mean_ms": 0.1153,
+      "p99_ms": 0.132,
+      "max_ms": 0.1316
+    },
+    {
+      "payload": "subclasses_escape",
+      "category": "reflection",
+      "blocked": true,
+      "rules": [
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.057,
+      "p99_ms": 0.064,
+      "max_ms": 0.0639
+    },
+    {
+      "payload": "lambda_globals",
+      "category": "reflection",
+      "blocked": true,
+      "rules": [
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.061,
+      "p99_ms": 0.066,
+      "max_ms": 0.0663
+    },
+    {
+      "payload": "eval_import",
+      "category": "dynamic code",
+      "blocked": true,
+      "rules": [
+        "SF002-dynamic-code"
+      ],
+      "mean_ms": 0.0561,
+      "p99_ms": 0.06,
+      "max_ms": 0.0602
+    },
+    {
+      "payload": "exec_compile",
+      "category": "dynamic code",
+      "blocked": true,
+      "rules": [
+        "SF002-dynamic-code"
+      ],
+      "mean_ms": 0.0753,
+      "p99_ms": 0.088,
+      "max_ms": 0.0883
+    },
+    {
+      "payload": "dunder_import",
+      "category": "import tricks",
+      "blocked": true,
+      "rules": [
+        "SF002-dynamic-code",
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.0581,
+      "p99_ms": 0.063,
+      "max_ms": 0.063
+    },
+    {
+      "payload": "getattr_obfuscation",
+      "category": "reflection",
+      "blocked": true,
+      "rules": [
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.094,
+      "p99_ms": 0.102,
+      "max_ms": 0.1025
+    },
+    {
+      "payload": "frame_walk",
+      "category": "reflection",
+      "blocked": true,
+      "rules": [
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.0905,
+      "p99_ms": 0.1,
+      "max_ms": 0.0996
+    },
+    {
+      "payload": "format_traversal",
+      "category": "reflection",
+      "blocked": true,
+      "rules": [
+        "SF004-format-traversal"
+      ],
+      "mean_ms": 0.064,
+      "p99_ms": 0.088,
+      "max_ms": 0.088
+    },
+    {
+      "payload": "importlib_alias",
+      "category": "import tricks",
+      "blocked": true,
+      "rules": [
+        "SF001-import"
+      ],
+      "mean_ms": 0.0652,
+      "p99_ms": 0.072,
+      "max_ms": 0.0722
+    },
+    {
+      "payload": "pickle_rce",
+      "category": "deserialization",
+      "blocked": true,
+      "rules": [
+        "SF001-import"
+      ],
+      "mean_ms": 0.0688,
+      "p99_ms": 0.176,
+      "max_ms": 0.1761
+    },
+    {
+      "payload": "ctypes_native",
+      "category": "native code",
+      "blocked": true,
+      "rules": [
+        "SF001-import",
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.0735,
+      "p99_ms": 0.168,
+      "max_ms": 0.168
+    },
+    {
+      "payload": "infinite_loop",
+      "category": "resource exhaustion",
+      "blocked": true,
+      "rules": [
+        "SF006-resource"
+      ],
+      "mean_ms": 0.0622,
+      "p99_ms": 0.068,
+      "max_ms": 0.068
+    },
+    {
+      "payload": "memory_bomb",
+      "category": "resource exhaustion",
+      "blocked": true,
+      "rules": [
+        "SF006-resource"
+      ],
+      "mean_ms": 0.0638,
+      "p99_ms": 0.073,
+      "max_ms": 0.073
+    },
+    {
+      "payload": "power_tower",
+      "category": "resource exhaustion",
+      "blocked": true,
+      "rules": [
+        "SF006-resource"
+      ],
+      "mean_ms": 0.0595,
+      "p99_ms": 0.072,
+      "max_ms": 0.0719
+    },
+    {
+      "payload": "docstring_injection",
+      "category": "prompt injection",
+      "blocked": true,
+      "rules": [
+        "SF007-prompt-injection"
+      ],
+      "mean_ms": 0.0825,
+      "p99_ms": 0.091,
+      "max_ms": 0.0912
+    },
+    {
+      "payload": "contract_injection",
+      "category": "prompt injection",
+      "blocked": true,
+      "rules": [
+        "SF002-dynamic-code",
+        "SF003-reflection"
+      ],
+      "mean_ms": 0.1014,
+      "p99_ms": 0.112,
+      "max_ms": 0.1123
+    }
+  ],
+  "firewall_benign": [
+    {
+      "module": "buggy/b01_split_payment",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b01_split_payment",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b02_sliding_window",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b02_sliding_window",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b03_normalize_whitespace",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b03_normalize_whitespace",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b04_mutable_default",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b04_mutable_default",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b05_zscore",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b05_zscore",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b06_quota_underflow",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b06_quota_underflow",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b07_ledger_total",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b07_ledger_total",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b08_paginate",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b08_paginate",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b09_rle_codec",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b09_rle_codec",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b10_top_k",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b10_top_k",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b11_hit_counter",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b11_hit_counter",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "buggy/b12_percentile",
+      "allowed": true,
+      "findings": []
+    },
+    {
+      "module": "reference/b12_percentile",
+      "allowed": true,
+      "findings": []
+    }
+  ]
+}

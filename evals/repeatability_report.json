@@ -1,0 +1,163 @@
+{
+  "generated_at": "2026-11-14T05:25:05+0100",
+  "runs": 3,
+  "quick": false,
+  "environment": {
+    "python": "3.11.18",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "sandbox": "subprocess",
+    "quick": false
+  },
+  "cpu_count": 14,
+  "quiet_threshold_load_per_core": 0.35,
+  "run_meta": [
+    {
+      "run": 1,
+      "load_per_core_before": 0.332,
+      "quiet": true,
+      "load_per_core_after": 0.318,
+      "waited_s": 50.0,
+      "process_s": 34.73,
+      "report": "evals/runs/run_1.json"
+    },
+    {
+      "run": 2,
+      "load_per_core_before": 0.333,
+      "quiet": true,
+      "load_per_core_after": 0.319,
+      "waited_s": 0.0,
+      "process_s": 34.48,
+      "report": "evals/runs/run_2.json"
+    },
+    {
+      "run": 3,
+      "load_per_core_before": 0.305,
+      "quiet": true,
+      "load_per_core_after": 0.423,
+      "waited_s": 0.0,
+      "process_s": 35.38,
+      "report": "evals/runs/run_3.json"
+    }
+  ],
+  "repeatable": true,
+  "deterministic_violations": [],
+  "stochastic_cases": [
+    "B11"
+  ],
+  "observed_stochastic_variation": [
+    "run 2: B11 detail `counterexamples` differs ([('atomicity[increment]', \"{'args': {}, 'calls': 1, 'init': {}, 'threads': 4}\", True)] vs [('atomicity[increment]', \"{'args': {}, 'calls': 1, 'init': {}, 'threads': 3}\", True)])",
+    "run 2: campaign shrink samples of ['B11'] differ ([('B11', 'atomicity[increment]', 13, 8)] vs [('B11', 'atomicity[increment]', 13, 7)])",
+    "run 3: B11 detail `counterexamples` differs ([('atomicity[increment]', \"{'args': {}, 'calls': 1, 'init': {}, 'threads': 4}\", True)] vs [('atomicity[increment]', \"{'args': {}, 'calls': 1, 'init': {}, 'threads': 2}\", True)])",
+    "run 3: campaign shrink samples of ['B11'] differ ([('B11', 'atomicity[increment]', 13, 8)] vs [('B11', 'atomicity[increment]', 13, 7)])",
+    "run 3: stress shrink samples of ['B11'] differ ([('B11', 'atomicity[increment]', 13, 7), ('B11', 'atomicity[increment]', 12, 7), ('B11'... vs [('B11', 'atomicity[increment]', 13, 8), ('B11', 'atomicity[increment]', 12, 7), ('B11'...)"
+  ],
+  "outcome_summary_run_1": {
+    "specforge_caught": 12,
+    "naive_caught": 0,
+    "false_alarms": 0,
+    "repaired": 12,
+    "oracle_exact": 12,
+    "firewall_blocked": 20,
+    "benign_allowed": 24,
+    "stress_shrink_aggregate_reduction_pct": 96.3
+  },
+  "deterministic_metric_values_per_run": [
+    {
+      "stress_aggregate_reduction_pct": 96.3,
+      "stress_mean_reduction_pct": 83.9,
+      "campaign_aggregate_reduction_pct": 83.37,
+      "ablation_mean_verifier_calls": 4.92,
+      "median_trials_to_first_failure": 3
+    },
+    {
+      "stress_aggregate_reduction_pct": 96.3,
+      "stress_mean_reduction_pct": 83.9,
+      "campaign_aggregate_reduction_pct": 83.57,
+      "ablation_mean_verifier_calls": 4.92,
+      "median_trials_to_first_failure": 3
+    },
+    {
+      "stress_aggregate_reduction_pct": 96.28,
+      "stress_mean_reduction_pct": 83.69,
+      "campaign_aggregate_reduction_pct": 83.57,
+      "ablation_mean_verifier_calls": 4.92,
+      "median_trials_to_first_failure": 3
+    }
+  ],
+  "timing_across_runs": {
+    "wall_time_s": {
+      "min": 34.41,
+      "median": 34.68,
+      "max": 35.32,
+      "cv_pct": 1.1
+    },
+    "median_ms_to_first_failure": {
+      "min": 0.645,
+      "median": 0.668,
+      "max": 0.671,
+      "cv_pct": 1.76
+    },
+    "stress_shrink_median_ms": {
+      "min": 0.333,
+      "median": 0.355,
+      "max": 0.36,
+      "cv_pct": 3.36
+    },
+    "stress_shrink_p95_ms": {
+      "min": 2.944,
+      "median": 3.007,
+      "max": 3.021,
+      "cv_pct": 1.12
+    },
+    "stress_shrink_max_ms": {
+      "min": 27.923,
+      "median": 28.39,
+      "max": 28.466,
+      "cv_pct": 0.85
+    },
+    "stress_shrink_under_50ms_pct": {
+      "min": 100.0,
+      "median": 100.0,
+      "max": 100.0,
+      "cv_pct": 0.0
+    },
+    "campaign_shrink_median_ms": {
+      "min": 0.148,
+      "median": 0.151,
+      "max": 0.16,
+      "cv_pct": 3.33
+    },
+    "campaign_shrink_max_ms": {
+      "min": 25.548,
+      "median": 26.492,
+      "max": 27.449,
+      "cv_pct": 2.93
+    },
+    "median_heal_ms": {
+      "min": 103.11,
+      "median": 103.37,
+      "max": 104.16,
+      "cv_pct": 0.43
+    },
+    "firewall_mean_audit_ms": {
+      "min": 0.0736,
+      "median": 0.0743,
+      "max": 0.0755,
+      "cv_pct": 1.05
+    },
+    "firewall_max_single_audit_ms": {
+      "min": 0.1263,
+      "median": 0.1272,
+      "max": 0.1857,
+      "cv_pct": 18.98
+    }
+  },
+  "targets_met_every_run": {
+    "stress_shrink_reduction_gt_80pct_every_run": true,
+    "firewall_every_audit_lt_2ms_every_run": true,
+    "discovery_ge_90pct_every_run": true,
+    "repair_ge_85pct_every_run": true,
+    "firewall_block_100pct_every_run": true
+  }
+}
