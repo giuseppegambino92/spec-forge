@@ -22,6 +22,45 @@ sottoposto allo stesso verificatore di ogni altro candidato.
 
 ---
 
+## Screenshot
+
+Sono registrazioni di esecuzioni reali di `specforge` sui moduli del benchmark inclusi in
+[`evals/datasets`](evals/datasets), con il motore offline predefinito e la sandbox a
+sottoprocesso. Niente è ritoccato a mano: [`scripts/make_screenshots.py`](scripts/make_screenshots.py)
+sostituisce la console Rich della CLI con una `Console(record=True)` che registra l'output e lo
+esporta con `export_svg`, quindi i tempi sono quelli misurati in quella esecuzione. Le immagini
+qui sotto mostrano l'output in italiano, ottenuto con `--lang it`. Per rigenerare entrambe le
+serie di immagini, eseguire `python scripts/make_screenshots.py` dalla radice del repository.
+
+**Falsificazione.** `specforge verify` su B06 (`deduct_quota`, underflow di una quota senza
+segno). Le proprietà dedotte e quelle dei docstring sono elencate con la loro origine; la
+postcondizione `:ensures:` viene violata e il delta debugging riduce l'input che la fa fallire a
+`{'cost': 1, 'remaining': 0}`.
+
+![specforge verify sul modulo B06 con l'underflow della quota](docs/images/it/verify.svg)
+
+**Riparazione.** `specforge heal` su B01 (`split_payment`, perdita di conservazione per
+arrotondamento). L'output mostra il controesempio minimo, la riparazione trovata al primo round,
+il diff verificato e la validazione indipendente con seed nuovi del modulo corretto.
+
+![specforge heal sul modulo B01 della ripartizione dei pagamenti](docs/images/it/heal.svg)
+
+**Firewall.** `specforge audit` sul payload `contract_injection` di
+[`evals/datasets/adversarial_payloads.py`](evals/datasets/adversarial_payloads.py), salvato in un
+file. La chiamata malevola è nascosta in un contratto `:ensures:`; l'audit statico la blocca e
+nessun codice viene eseguito.
+
+![specforge audit che blocca un payload di contract injection](docs/images/it/audit.svg)
+
+**Dashboard in tempo reale.** L'ultimo frame di `specforge dash` su B02 (`admit_requests`,
+off-by-one nella finestra scorrevole): contratti dedotti, il controesempio ridotto con delta
+debugging, il candidato MCTS con il suo reward e la sospettosità di Ochiai, la patch verificata e
+il log degli eventi.
+
+![specforge dash dopo la riparazione del modulo B02 della finestra scorrevole](docs/images/it/dash.svg)
+
+---
+
 ## Risultati misurati
 
 Il benchmark è stato eseguito **3 volte consecutive** con `python -m evals.repeat_runs` il
@@ -257,10 +296,21 @@ specforge heal   path/to/module.py --out fixed.py   # riparazione CEGIS + valida
 specforge dash   path/to/module.py            # dashboard Rich del ciclo in tempo reale
 specforge eval                                # esegue il benchmark (dalla radice del repository)
 specforge mcp                                 # server MCP su stdio
+specforge --lang it verify path/to/module.py  # output in italiano (oppure: export SPECFORGE_LANG=it)
 
 python -m evals.benchmark_suite               # un'esecuzione del benchmark -> evals/latest_report.json
 python -m evals.repeat_runs --update-latest   # 3 esecuzioni a macchina quieta + verifica di ripetibilità
 ```
+
+**Lingua dell'output.** L'output leggibile è in inglese per impostazione predefinita. Per
+l'italiano, passare l'opzione globale `--lang it` prima del comando, oppure impostare
+`SPECFORGE_LANG=it` (un `--lang` esplicito ha la precedenza; un valore sconosciuto nella variabile
+ricade sull'inglese). Anche l'help di comandi e opzioni segue questa impostazione; le etichette
+dell'help generate dal framework (Usage, Options, ...) restano in inglese. L'output leggibile
+dalle macchine non viene mai tradotto: i report `--json`, i risultati MCP, i diff e i sorgenti
+corretti sono identici nelle due lingue. Lo stesso vale per i messaggi prodotti dal motore
+(enunciati delle proprietà, messaggi dei controesempi, descrizioni delle modifiche di riparazione
+e messaggi delle regole del firewall), che fanno parte del report JSON.
 
 Scrivere i contratti nei docstring. Tutto il resto viene dedotto.
 
@@ -397,7 +447,7 @@ Tutto il codice target gira in un sottoprocesso worker persistente:
 ## Test
 
 ```bash
-pytest     # 110 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~13–18 s
+pytest     # 201 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~13–18 s
 ```
 
 - **`test_invariants_and_shrinking.py`:** analisi dei contratti, inferenza di tipi e intervalli,
@@ -422,6 +472,10 @@ pytest     # 110 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~1
   - la CLI dall'inizio alla fine, e il rendering della TUI;
   - gli adattatori Anthropic, OpenAI e Ollama contro server locali nel formato di rete, la
     gestione dei rifiuti e una riparazione guidata dalla politica LLM.
+- **`test_i18n.py`:** i cataloghi dei messaggi in inglese e in italiano hanno le stesse chiavi,
+  gli stessi placeholder e lo stesso markup Rich; `--lang it` e `SPECFORGE_LANG=it` portano in
+  italiano comandi reali, testi di help e dashboard, mentre il default resta l'inglese; l'output
+  `--json` è identico nelle due lingue.
 - **`test_docs.py`:** coerenza tra `README.md` e `README.it.md`:
   - i collegamenti tra le lingue in cima a entrambi i file;
   - blocchi `math` e frammenti di codice inline identici;
@@ -436,6 +490,7 @@ pytest     # 110 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~1
 ```
 src/spec_forge/
   config.py                  budget, limiti di riduzione, costanti MCTS, politica della sandbox
+  i18n.py                    catalogo dei messaggi inglese / italiano per l'output di CLI e TUI (--lang, SPECFORGE_LANG)
   codec.py                   codec JSON senza perdite, uguaglianza consapevole dei NaN, metrica di complessità
   orchestrator/state_graph.py  macchina a stati ciclica senza framework + bus di eventi
   orchestrator/memory.py     registro episodico dei controesempi (SQLite WAL)
@@ -458,6 +513,7 @@ evals/
   datasets/buggy/*.py        12 moduli con bug       datasets/reference/*.py  le loro correzioni
   datasets/naive_suites.py   test del percorso felice  datasets/adversarial_payloads.py  20 payload
 tests/                       suite pytest
+scripts/make_screenshots.py  rigenera docs/images/{en,it}/*.svg da esecuzioni reali della CLI
 ```
 
 ## Limiti e prossimi passi

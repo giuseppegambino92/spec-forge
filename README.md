@@ -21,6 +21,43 @@ proposal policies, and their output is held to the same verifier as every other 
 
 ---
 
+## Screenshots
+
+These are recordings of real `specforge` runs on the benchmark modules bundled in
+[`evals/datasets`](evals/datasets), using the default offline engine and the subprocess sandbox.
+Nothing is edited by hand. [`scripts/make_screenshots.py`](scripts/make_screenshots.py) swaps
+the CLI's Rich console for a recording `Console(record=True)` and exports it with `export_svg`,
+so the timings are the ones measured in that run. The Italian README shows the same runs with
+`--lang it`. To regenerate both sets of images, run `python scripts/make_screenshots.py` from the
+repository root.
+
+**Falsification.** `specforge verify` on B06 (`deduct_quota`, unsigned quota underflow). The
+inferred and docstring properties are listed with their origin; the `:ensures:` postcondition is
+violated, and delta debugging shrinks the failing input to `{'cost': 1, 'remaining': 0}`.
+
+![specforge verify on the B06 quota-underflow module](docs/images/en/verify.svg)
+
+**Repair.** `specforge heal` on B01 (`split_payment`, conservation leak on rounding). The output
+shows the minimal counterexample, the repair found in the first round, the verified diff, and the
+independent fresh-seed validation of the patched module.
+
+![specforge heal on the B01 split-payment module](docs/images/en/heal.svg)
+
+**Firewall.** `specforge audit` on the `contract_injection` payload from
+[`evals/datasets/adversarial_payloads.py`](evals/datasets/adversarial_payloads.py), saved to a
+file. The malicious call is hidden in an `:ensures:` contract; the static audit blocks it and no
+code is executed.
+
+![specforge audit blocking a contract-injection payload](docs/images/en/audit.svg)
+
+**Live dashboard.** The last frame of `specforge dash` on B02 (`admit_requests`, off-by-one
+sliding window): inferred contracts, the delta-debugged counterexample, the MCTS candidate with
+its reward and Ochiai suspiciousness, the verified patch, and the event log.
+
+![specforge dash after repairing the B02 sliding-window module](docs/images/en/dash.svg)
+
+---
+
 ## Measured results
 
 The benchmark was run **3 consecutive times** with `python -m evals.repeat_runs` on 2026-11-14,
@@ -245,10 +282,20 @@ specforge heal   path/to/module.py --out fixed.py   # CEGIS repair + independent
 specforge dash   path/to/module.py            # live Rich dashboard of the loop
 specforge eval                                # run the benchmark (from the repo root)
 specforge mcp                                 # MCP server over stdio
+specforge --lang it verify path/to/module.py  # Italian output (or: export SPECFORGE_LANG=it)
 
 python -m evals.benchmark_suite               # one benchmark run -> evals/latest_report.json
 python -m evals.repeat_runs --update-latest   # 3 runs on a quiet machine + repeatability check
 ```
+
+**Output language.** Human-readable output is in English by default. For Italian, pass the
+global option `--lang it` before the command, or set `SPECFORGE_LANG=it` (an explicit `--lang`
+wins; an unknown value in the variable falls back to English). Command and option help follow the
+same setting; the framework's own help labels (Usage, Options, ...) stay in English.
+Machine-readable output is never translated: `--json` reports, MCP results, diffs and patched
+sources are identical in both languages. So are the messages the engine itself produces (property
+statements, counterexample messages, repair-edit descriptions and firewall rule messages), which
+are part of the JSON report.
 
 Write contracts in docstrings. Everything else is inferred.
 
@@ -378,7 +425,7 @@ All target code runs in a persistent worker subprocess:
 ## Tests
 
 ```bash
-pytest     # 110 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~13–18 s
+pytest     # 201 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~13–18 s
 ```
 
 - **`test_invariants_and_shrinking.py`:** contract parsing, type and interval inference, every
@@ -401,6 +448,10 @@ pytest     # 110 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~1
   - the CLI end to end, and the TUI render;
   - the Anthropic, OpenAI and Ollama adapters against local wire-format servers, refusal
     handling, and an LLM-policy-driven heal.
+- **`test_i18n.py`:** the English and Italian message catalogs have the same keys, placeholders
+  and Rich markup; `--lang it` and `SPECFORGE_LANG=it` switch real commands, help texts and the
+  dashboard to Italian while the default stays English; `--json` output is identical in both
+  languages.
 - **`test_docs.py`:** consistency between `README.md` and `README.it.md`:
   - the language cross-links at the top of both files;
   - identical `math` blocks and inline code spans;
@@ -415,6 +466,7 @@ pytest     # 110 passed, 1 skipped (the RLIMIT_AS test only runs on Linux) in ~1
 ```
 src/spec_forge/
   config.py                  budgets, shrink limits, MCTS constants, sandbox policy
+  i18n.py                    English / Italian message catalog for the CLI and TUI output (--lang, SPECFORGE_LANG)
   codec.py                   lossless JSON value codec, NaN-aware equality, complexity metric
   orchestrator/state_graph.py  zero-framework cyclic state machine + event bus
   orchestrator/memory.py     episodic counterexample ledger (SQLite WAL)
@@ -437,6 +489,7 @@ evals/
   datasets/buggy/*.py        12 buggy modules       datasets/reference/*.py  their fixes
   datasets/naive_suites.py   happy-path unit tests  datasets/adversarial_payloads.py  20 payloads
 tests/                       pytest suite
+scripts/make_screenshots.py  regenerates docs/images/{en,it}/*.svg from real CLI runs
 ```
 
 ## Limits and next steps
