@@ -2,6 +2,8 @@
 
 **English** | [Italiano](README.it.md)
 
+<a href="https://paypal.me/giuseppegambino92"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal"></a>
+
 **Neuro-symbolic multi-agent code verification and self-healing synthesis for Python.**
 
 Unit tests check the examples somebody thought of. spec-forge infers what the code *promises*
@@ -447,3 +449,9 @@ tests/                       pytest suite
   new data structures or multi-function refactors need the LLM policy.
 - The interval solver is not SMT. Relational preconditions such as `a < b` are enforced at
   runtime by rejection sampling, not solved.
+
+## Support the project
+
+If this project is useful to you, you can support its development with a donation on PayPal:
+
+<a href="https://paypal.me/giuseppegambino92"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal"></a>

@@ -2,6 +2,8 @@
 
 [English](README.md) | **Italiano**
 
+<a href="https://paypal.me/giuseppegambino92"><img src="https://www.paypalobjects.com/it_IT/IT/i/btn/btn_donateCC_LG.gif" alt="Fai una donazione con PayPal"></a>
+
 **Verifica del codice multi-agente neuro-simbolica e sintesi auto-riparante per Python.**
 
 I test unitari controllano gli esempi a cui qualcuno ha pensato. spec-forge deduce ciò che il
@@ -469,3 +471,9 @@ tests/                       suite pytest
   LLM.
 - Il risolutore a intervalli non è SMT. Le precondizioni relazionali come `a < b` vengono
   applicate a runtime tramite campionamento con rifiuto, non risolte.
+
+## Supporta il progetto
+
+Se questo progetto ti è utile, puoi sostenerne lo sviluppo con una donazione su PayPal:
+
+<a href="https://paypal.me/giuseppegambino92"><img src="https://www.paypalobjects.com/it_IT/IT/i/btn/btn_donateCC_LG.gif" alt="Fai una donazione con PayPal"></a>
