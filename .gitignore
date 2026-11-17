@@ -38,3 +38,4 @@ evals/runs/
 .idea/
 .vscode/
 *.swp
+uv.lock
