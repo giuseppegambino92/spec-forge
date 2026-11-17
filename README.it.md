@@ -2,11 +2,41 @@
 
 [English](README.md) | **Italiano**
 
-<a href="https://paypal.me/giuseppegambino92"><img src="https://www.paypalobjects.com/it_IT/IT/i/btn/btn_donateCC_LG.gif" alt="Fai una donazione con PayPal"></a>
+[![CI](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml)
 
-**Verifica del codice multi-agente neuro-simbolica e sintesi auto-riparante per Python.**
+**I tuoi test passano, ma solo sugli input a cui qualcuno ha pensato. spec-forge cerca l'input che
+fa sbagliare la tua funzione Python, poi prova a correggerla e verifica la correzione.**
 
-I test unitari controllano gli esempi a cui qualcuno ha pensato. spec-forge deduce ciò che il
+Scrivi nella docstring cosa garantisce una funzione (per esempio `sum(result) == total_cents`),
+oppure lasci che spec-forge deduca da solo garanzie comuni come il determinismo o la
+reversibilità di una codifica. Cerca un input che violi la garanzia, lo riduce al caso più piccolo
+che fallisce e propone una piccola patch, che ricontrolla su tutti i casi falliti trovati fino a
+quel momento. Gira offline sulla tua macchina, senza API key; un LLM è facoltativo.
+
+È pensato per chi sviluppa in Python e vuole controlli più solidi dei test basati su esempi, su
+funzioni autonome: calcoli con importi, parser, paginazione, encoder. È un progetto di ricerca;
+[Limiti e prossimi passi](#limiti-e-prossimi-passi) elenca ciò che non sa riparare.
+
+## Provalo in 30 secondi
+
+```bash
+git clone https://github.com/giuseppegambino92/spec-forge.git && cd spec-forge
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+
+specforge verify evals/datasets/buggy/b06_quota_underflow.py   # trova un input che fallisce e lo riduce
+specforge heal   evals/datasets/buggy/b01_split_payment.py     # ripara il bug e mostra il diff verificato
+```
+
+spec-forge non è su PyPI; installalo da un clone come sopra. Entrambi i file sono inclusi nel
+repository.
+
+## Cosa c'è dentro
+
+In termini tecnici: **verifica del codice multi-agente neuro-simbolica e sintesi auto-riparante
+per Python.**
+
+spec-forge deduce ciò che il
 codice *promette* (contratti, leggi di conservazione, idempotenza, invertibilità round-trip,
 purezza, atomicità...), cerca in modo avversariale un input che infranga la promessa, lo riduce a
 un controesempio minimo e poi ripara il codice con una Monte Carlo Tree Search sulle modifiche

@@ -2,11 +2,40 @@
 
 **English** | [Italiano](README.it.md)
 
-<a href="https://paypal.me/giuseppegambino92"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal"></a>
+[![CI](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml)
 
-**Neuro-symbolic multi-agent code verification and self-healing synthesis for Python.**
+**Your tests pass, but only on the inputs somebody thought of. spec-forge looks for the input that
+breaks your Python function, then tries to fix the function and checks the fix.**
 
-Unit tests check the examples somebody thought of. spec-forge infers what the code *promises*
+You write down what a function guarantees in its docstring (for example
+`sum(result) == total_cents`), or let spec-forge infer common guarantees such as determinism or
+round-tripping. It searches for an input that breaks the guarantee, shrinks it to the smallest
+failing case, and proposes a small patch that it re-checks against every failing case found so
+far. It runs offline on your machine with no API key; an LLM is optional.
+
+It is meant for Python developers who want stronger checks than example-based tests on
+self-contained functions: money arithmetic, parsers, pagination, encoders. It is a research
+project; [Limits and next steps](#limits-and-next-steps) lists what it cannot repair.
+
+## Try it in 30 seconds
+
+```bash
+git clone https://github.com/giuseppegambino92/spec-forge.git && cd spec-forge
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+
+specforge verify evals/datasets/buggy/b06_quota_underflow.py   # finds a failing input and shrinks it
+specforge heal   evals/datasets/buggy/b01_split_payment.py     # repairs the bug and shows the verified diff
+```
+
+spec-forge is not on PyPI; install it from a clone as above. Both files ship with the repository.
+
+## What's inside
+
+In technical terms: **neuro-symbolic multi-agent code verification and self-healing synthesis for
+Python.**
+
+spec-forge infers what the code *promises*
 (contracts, conservation laws, idempotency, round-trip invertibility, purity, atomicity...),
 searches adversarially for an input that breaks the promise, shrinks it to a minimal
 counterexample, and then repairs the code with a Monte Carlo Tree Search over AST edits. Every
