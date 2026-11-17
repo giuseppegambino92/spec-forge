@@ -299,5 +299,12 @@ class SandboxRunner:
                 return {"ok": False, "error": "sandbox protocol corruption"}
             if isinstance(result, dict) and result.get("tainted"):
                 self._kill()  # stray threads from a hung target: recycle the worker
+            if isinstance(result, dict) and not result.get("ok", True) and any(
+                    str(result.get(k, "")).startswith("MemoryError") for k in ("error", "load_error")):
+                # Linux enforces the cap through RLIMIT_AS, so the target hits MemoryError inside the
+                # worker before the RSS watchdog sees it: report it the same way as a watchdog kill.
+                self.memory_kills += 1
+                self._kill()
+                return {"ok": False, "error": f"sandbox worker exceeded memory cap ({self.policy.memory_mb} MB) and was killed"}
             return result
         return {"ok": False, "error": "sandbox worker unavailable"}

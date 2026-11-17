@@ -6,4 +6,7 @@ def ledger_total(amounts: list[float]) -> float:
 
     :requires: all(math.isfinite(a) and abs(a) <= 1e9 for a in amounts)
     """
-    return sum(amounts)
+    total = 0.0
+    for amount in amounts:  # naive running sum: rounding depends on posting order
+        total += amount
+    return total

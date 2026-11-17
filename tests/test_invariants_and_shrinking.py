@@ -165,7 +165,9 @@ def grab(xs: list[int], seen: list[int] = []) -> list[int]:
 
 
 def test_permutation_invariance_catches_float_drift_and_fsum_fixes_it():
-    bad = "def ledger_total(xs: list[float]) -> float:\n    return sum(xs)\n"
+    # A running `+=` total, not sum(): since Python 3.12 sum() of floats is compensated and would
+    # hide the drift on this input.
+    bad = "def ledger_total(xs: list[float]) -> float:\n    t = 0.0\n    for x in xs:\n        t += x\n    return t\n"
     good = "import math\ndef ledger_total(xs: list[float]) -> float:\n    return math.fsum(xs)\n"
     case = {"xs": [0.1, 0.2, 0.3]}
     ctx, props = ctx_for(bad, "ledger_total")

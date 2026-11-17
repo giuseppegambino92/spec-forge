@@ -14,6 +14,7 @@ Local rules (anchored at a line, ranked by fault-localisation suspiciousness)
   index_clamp        xs[i] -> xs[min(max(i, 0), len(xs) - 1)]
   saturating_sub     a - b -> max(0, a - b)
   exact_sum          sum(xs) -> math.fsum(xs)                (floating-point drift)
+                     for x in xs: t += x  ->  t += math.fsum(xs)
 Function-level templates (anchored at the target definition)
   contract_clamp         clamp returned value into the bounds stated by ``:ensures:``
   conservation_rebalance distribute the residual of ``sum(result) == E`` one unit at a time
@@ -216,6 +217,15 @@ def local_candidates(src: str, scopes: list[tuple[int, int]], skip_lines: set[in
                 seq, idx = st.segment(node.value), st.segment(node.slice)
                 yield Candidate("index_clamp", f"L{line}: clamp index `{idx}` into bounds of `{seq}`", line,
                                 st.replace(node.slice, f"min(max({idx}, 0), len({seq}) - 1)"))
+        elif isinstance(node, ast.For) and isinstance(node.target, ast.Name) and not node.orelse \
+                and len(node.body) == 1 and isinstance(node.body[0], ast.AugAssign) \
+                and isinstance(node.body[0].op, ast.Add) and isinstance(node.body[0].target, ast.Name) \
+                and isinstance(node.body[0].value, ast.Name) and node.body[0].value.id == node.target.id:
+            # A running `+=` total rounds after every step, so its result depends on the order.
+            acc, seq = node.body[0].target.id, st.segment(node.iter)
+            new_src = st.replace(node, f"{acc} += math.fsum({seq})")
+            yield Candidate("exact_sum", f"L{line}: running total `{acc} += {node.target.id}` -> "
+                            f"`{acc} += math.fsum({seq})` (exactly rounded)", line, _ensure_import(new_src, "math"))
         elif isinstance(node, ast.Call):
             name = node.func.id if isinstance(node.func, ast.Name) else ""
             if name == "sum" and len(node.args) == 1 and not node.keywords:

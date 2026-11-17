@@ -2,6 +2,8 @@
 
 **English** | [Italiano](README.it.md)
 
+[![CI](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB) [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 **Your tests pass, but only on the inputs somebody thought of. spec-forge looks for the input that
 breaks your Python function, then tries to fix the function and checks the fix.**
 
@@ -137,7 +139,7 @@ waits for a quiet machine before each run.
 | B04 | Mutable default state corruption | determinism / no input mutation | `register_event(name='')` called twice | defensive copy on entry |
 | B05 | Division by zero on degenerate variance | totality | `zscores(samples=[0.0])` | divisor guard (L15) |
 | B06 | Unsigned quota underflow | `:ensures: 0 <= result <= remaining` | `remaining=0, cost=1` | clamp derived from `:ensures:` |
-| B07 | Float drift / order dependence (ledger) | permutation invariance | 3 postings | `sum` → `math.fsum` |
+| B07 | Float drift / order dependence (ledger) | permutation invariance | 3 postings | running `+=` total → `math.fsum` |
 | B08 | Off-by-one slice bound (pagination) | partition `:law:` | `items=[0], page=0, size=1` | literal `1` → `0` (L13) |
 | B09 | Round-trip invertibility (RLE codec) | `decode(encode(x)) == x` | `data=' '` | `j - i` → `j - i + 1` (12 verifier calls) |
 | B10 | Input aliasing (in-place sort) | no input mutation | `scores=[0, 1], k=0` | defensive copy on entry |
@@ -283,7 +285,7 @@ The repair grammar has two kinds of rules:
 
 - **Local rules, anchored at suspicious lines:** comparison swap, ±1 literal, ±1 on arithmetic,
   slice and `range` bounds, `+`/`-` and `/`/`//` swap, zero-divisor guard, index clamp,
-  saturating subtraction, and `sum` → `math.fsum`.
+  saturating subtraction, and `sum` → `math.fsum` (also for a running `+=` total).
 - **Function-level templates:** clamp to bounds derived from `:ensures:`, conservation residual
   rebalance derived from `sum(result) == E`, defensive copy, mutable-default sentinel, fixpoint
   closure for idempotency, and per-instance lock isolation.

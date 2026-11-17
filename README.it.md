@@ -2,6 +2,8 @@
 
 [English](README.md) | **Italiano**
 
+[![CI](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml) ![python](https://img.shields.io/badge/python-3.10%2B-3776AB) [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 **I tuoi test passano, ma solo sugli input a cui qualcuno ha pensato. spec-forge cerca l'input che
 fa sbagliare la tua funzione Python, poi prova a correggerla e verifica la correzione.**
 
@@ -146,7 +148,7 @@ prima di ogni esecuzione.
 | B04 | Corruzione di stato da default mutabile | determinismo / nessuna mutazione degli input | `register_event(name='')` chiamata due volte | copia difensiva in ingresso |
 | B05 | Divisione per zero su varianza degenere | totalità | `zscores(samples=[0.0])` | guardia sul divisore (L15) |
 | B06 | Underflow di quota senza segno | `:ensures: 0 <= result <= remaining` | `remaining=0, cost=1` | clamp derivato da `:ensures:` |
-| B07 | Deriva in virgola mobile / dipendenza dall'ordine (registro contabile) | invarianza per permutazione | 3 registrazioni | `sum` → `math.fsum` |
+| B07 | Deriva in virgola mobile / dipendenza dall'ordine (registro contabile) | invarianza per permutazione | 3 registrazioni | totale progressivo con `+=` → `math.fsum` |
 | B08 | Off-by-one sul limite di slice (paginazione) | `:law:` di partizione | `items=[0], page=0, size=1` | letterale `1` → `0` (L13) |
 | B09 | Invertibilità round-trip (codec RLE) | `decode(encode(x)) == x` | `data=' '` | `j - i` → `j - i + 1` (12 chiamate al verificatore) |
 | B10 | Aliasing dell'input (ordinamento in place) | nessuna mutazione degli input | `scores=[0, 1], k=0` | copia difensiva in ingresso |
@@ -298,7 +300,7 @@ La grammatica di riparazione ha due tipi di regole:
 
 - **Regole locali, ancorate alle righe sospette:** scambio di confronto, letterale ±1, ±1 su
   aritmetica, limiti di slice e di `range`, scambio `+`/`-` e `/`/`//`, guardia sul divisore nullo,
-  clamp dell'indice, sottrazione saturante e `sum` → `math.fsum`.
+  clamp dell'indice, sottrazione saturante e `sum` → `math.fsum` (anche per un totale progressivo con `+=`).
 - **Modelli a livello di funzione:** clamp ai limiti derivati da `:ensures:`, ribilanciamento del
   residuo di conservazione derivato da `sum(result) == E`, copia difensiva, sentinella per default
   mutabili, chiusura a punto fisso per l'idempotenza e isolamento con lock per istanza.
