@@ -17,6 +17,7 @@ MATH_FENCE = re.compile(r"^```math\n(.*?)^```", re.S | re.M)
 INLINE_CODE = re.compile(r"`([^`\n]+)`")
 VERSION = re.compile(r"\b(?:macOS|Python|JSON-RPC)\s+\d+(?:\.\d+)+|\d+(?:\.\d+){2,}")  # versions, not measurements
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+URL = re.compile(r"https?://[^\s)\]]+")  # badge and link targets are not prose
 NUM = {
     "en": re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?"),
     "it": re.compile(r"\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?"),
@@ -31,7 +32,7 @@ def _read(p: Path) -> str:
 
 def numbers(text: str, lang: str) -> Counter:
     prose = INLINE_CODE.sub(" ", FENCE.sub(" ", text))
-    prose = DATE.sub(" ", VERSION.sub(" ", prose))
+    prose = DATE.sub(" ", VERSION.sub(" ", URL.sub(" ", prose)))
     out: Counter = Counter()
     for tok in NUM[lang].findall(prose):
         if lang == "en":
