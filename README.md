@@ -2,8 +2,6 @@
 
 **English** | [Italiano](README.it.md)
 
-[![CI](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml)
-
 **Your tests pass, but only on the inputs somebody thought of. spec-forge looks for the input that
 breaks your Python function, then tries to fix the function and checks the fix.**
 

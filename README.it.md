@@ -2,8 +2,6 @@
 
 [English](README.md) | **Italiano**
 
-[![CI](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/giuseppegambino92/spec-forge/actions/workflows/ci.yml)
-
 **I tuoi test passano, ma solo sugli input a cui qualcuno ha pensato. spec-forge cerca l'input che
 fa sbagliare la tua funzione Python, poi prova a correggerla e verifica la correzione.**
 
